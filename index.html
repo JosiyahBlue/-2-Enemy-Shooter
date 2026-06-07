@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    canvas {
+      background: lightgreen;
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+    .noscroll {
+      overflow: hidden;
+      position: fixed;
+      width: 100%;
+    }
+    #square {
+      width: 50px;
+      height: 50px;
+      background: blue;
+      position: absolute;
+      top: 40%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 2;
+    }
+    #bullet {
+      top: -30px;
+      left: -30px;
+      width: 10px;
+      height: 10px;
+      transform: translate(-50%, -50%);
+      background: maroon;
+      position: absolute;
+      z-index: 1;
+    }
+    .bullet {
+      width: 10px;
+      height: 10px;
+      transform: translate(-50%, -50%);
+      background: maroon;
+      position: absolute;
+    }
+    .bullet.enemy {
+      width: 10px;
+      height: 10px;
+      transform: translate(-50%, -50%);
+      background: lightseagreen;
+      position: absolute;
+    }
+    .bullet.bomb {
+      width: 20px;
+      height: 20px;
+      background: black;
+      position: absolute;
+    }
+    #enemy {
+      width: 50px;
+      height: 50px;
+      background: red;
+      position: absolute;
+      top: -60px;
+      left: -60px;
+    }
+    .enemy {
+      width: 50px;
+      height: 50px;
+      background: red;
+      position: absolute;
+    }
+    .enemy.shooter {
+      width: 40px;
+      height: 40px;
+      background: rgb(96, 183, 212);
+      position: absolute;
+    }
+    
+    #gameOverMessage {
+      display: none;
+      position: absolute;
+      top: 35%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 48px;
+      color: red;
+      z-index: 100;
+      pointer-events: none;
+      visibility: hidden;
+      display: block;
+    }
+    #restartButton {
+      height: 40px;
+      width: 70px;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: purple;
+      visibility: hidden;
+      z-index: 1;
+    } 
+  </style>
+</head>
+<body>
+    <div id="square"></div>
+    <div id="bullet"></div>
+    <div id="enemy"></div>
+    <div id="gameOverMessage">Game Over!</div>
+    <button type="button" id="restartButton"></button>
+    <div id="canvas" style="display: none;"></div>
+    <canvas id="gameCanvas"></canvas>  
+    <script type="module" src="code.js"></script>
+    <script type="module" src="square.js"></script>
+    <script type="module" src="bullet.js"></script>
+    <script type="module" src="enemy.js"></script>
+    <script>
+      let scrollPos = window.scrollY;
+      document.body.classList.add('noscroll');
+      document.body.style.top = '-${scrollPos}px';
+    </script>
+</body>
+</html>
