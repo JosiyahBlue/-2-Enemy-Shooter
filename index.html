@@ -3,8 +3,15 @@
 <head>
   <link rel="manifest" href="manifest.json">
   <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+    }
     canvas {
       background: lightgreen;
+      position: absolute;
       display: block;
       width: 100vw;
       height: 100vh;
@@ -17,7 +24,7 @@
     #square {
       width: 50px;
       height: 50px;
-      background: blue;
+      background-image: url("Player.png");
       position: absolute;
       top: 40%;
       left: 50%;
@@ -91,6 +98,8 @@
     #restartButton {
       height: 40px;
       width: 70px;
+      font-weight: bold;
+      font-size: 100%;
       position: absolute;
       top: 50%;
       left: 50%;
@@ -106,7 +115,7 @@
     <div id="bullet"></div>
     <div id="enemy"></div>
     <div id="gameOverMessage">Game Over!</div>
-    <button type="button" id="restartButton"></button>
+    <button type="button" id="restartButton"> Restart </button>
     <div id="canvas" style="display: none;"></div>
     <canvas id="gameCanvas"></canvas>  
     <script type="module" src="code.js"></script>

@@ -204,13 +204,15 @@ let isSpacePressed = false;
 
 const bombCooldown = 2000;
 let lastBombTime = 0;
-const bulletCooldown = 100;
+const bulletCooldown = 400;
 let lastBulletTime = 0;
 
-function shootBullet() {
+export function shootBullet() {
   const now = Date.now();
-  lastBombTime = now;
-  if(now - lastBombTime < )
+  if(now - lastBulletTime < bulletCooldown) {
+    return;
+  }
+  lastBulletTime = now;
   const square = document.getElementById('square');
   const squareRect = square.getBoundingClientRect();
   const squareCenterX = squareRect.left + squareRect.width / 2;
@@ -241,7 +243,7 @@ function explode(x, y) {
   
 }
 
-function shootBomb() {
+export function shootBomb() {
   const now = Date.now();
   if (now - lastBombTime < bombCooldown) {
     return;
@@ -266,7 +268,7 @@ export function enemyBullet(enemyX, enemyY) {
 }
 
 document.addEventListener('keydown', (ev) => {
-  if (ev.key === 'f' && !isFPressed) {
+  if (ev.key === 'f') {
     isFPressed = true;
     shootBullet();
   }
