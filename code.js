@@ -1,6 +1,7 @@
 import { updatePlayer, square } from './square.js';
 import { updateBullets, bullets, enemyBullets, bombs } from './bullet.js';
 import { spawnEnemy, updateEnemy } from './enemy.js';
+import { updateGun } from './gun.js';
 
 export let enemies = []
 export let enemyS = []
@@ -43,6 +44,7 @@ function gameLoop() {
         enemyBulletPlayerCollision();
         updateEnemy();
         updatePlayer();
+        updateGun();
 
         animationFrameId = requestAnimationFrame(gameLoop);
     }

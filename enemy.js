@@ -7,6 +7,27 @@ const WIDTH = window.innerWidth;
 const HEIGHT = window.innerHeight;
 let squareHealth = 100;
 let gameOver = false;
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+const slimeImg = new Image();
+slimeImg.src = 'assets/slimeSpriteSheet.png';
+
+const frameWidth = 32;
+const frameHeight = 32;
+const frameCellWidth = 32;
+const frameCellHeight = 40;
+const frameCropOffsetX = 0;
+const frameCropOffsetY = 4;
+let totalFrames = 10;
+
+let framesPerRow = null;
+let totalRows = 1;
+slimeImg.onload = () => {
+    framesPerRow = Math.floor(slimeImg.width / frameCellWidth) || totalFrames;
+    totalRows = Math.floor(slimeImg.height / frameCellHeight) || 1;
+    totalFrames = framesPerRow * totalRows;
+};
 
 export function isShot(obj1, obj2) {
     const rect1 = obj1.el.getBoundingClientRect();
@@ -50,6 +71,12 @@ class Enemy {
         const speed = 1.5;
         const length = Math.sqrt(dx * dx + dy * dy);
 
+        if (squareX < this.x) {
+            this.el.classList.add('flipped');
+        } else {
+            this.el.classList.remove('flipped');
+        }
+
         this.vx = (dx/length) * speed;
         this.vy = (dy/length) * speed;
 
@@ -89,9 +116,26 @@ class EnemyShooter extends Enemy {
         this.vy = (dy/length) * speed;
 
         this.el.classList.add('shooter');
-        
+        const cs = window.getComputedStyle(this.el);
+        this.drawWidth = parseFloat(cs.width) || 100;
+        this.drawHeight = parseFloat(cs.height) || 100;
+        this.el.style.visibility = 'hidden';
+        this.el.style.pointerEvents = 'none';
         this.shotCooldown = 100;
         this.shootTimer = this.shotCooldown;
+
+        // animation timing for canvas rendering
+        this.currentFrame = 0;
+        this.frameTimer = 0;
+        this.frameDelay = 8 + Math.floor(Math.random() * 8);
+
+        // determine columns and rows from the sprite sheet
+        const cols = framesPerRow || totalFrames;
+        const rows = totalRows || Math.ceil(totalFrames / cols);
+        this.frameCols = cols;
+        this.frameRows = rows;
+        // clamp target row to valid range (third row = index 2)
+        this.rowIndex = Math.min(2, Math.max(0, rows - 1));
 
         this.updateStyle();
     }
@@ -112,6 +156,12 @@ class EnemyShooter extends Enemy {
 
         let trig = Math.hypot(dy, dx);
         let maxDist = 300;
+
+        if (squareX < this.x) {
+            this.el.classList.add('flipped');
+        } else {
+            this.el.classList.remove('flipped');
+        }
 
         if (Math.abs(trig) > maxDist || this.x < 0 || this.x > WIDTH) {
             this.vx = (dx / length) * speed;
@@ -138,6 +188,8 @@ class EnemyShooter extends Enemy {
                 this.shootTimer = this.shotCooldown;
              }
         }
+
+        // animation handled by canvas rendering; nothing to do per-frame here
 
         // keep existing collision and style updates
         enemyShooterPlayerCollision();
@@ -173,12 +225,27 @@ export function updateEnemy() {
     
 
     
+    if (canvas.width !== window.innerWidth || canvas.height !== window.innerHeight) {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
     for (let i = enemyS.length - 1; i >= 0; i--) {
         const e = enemyS[i];
-        if(e.el) {
+        if (e.el) {
             e.update();
+            e.frameTimer++;
+            if (e.frameTimer >= e.frameDelay) {
+                e.frameTimer = 0;
+                e.currentFrame = (e.currentFrame + 1) % e.frameCols;
+            }
+            const sx = e.currentFrame * frameCellWidth + frameCropOffsetX;
+            const sy = e.rowIndex * frameCellHeight + frameCropOffsetY;
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(slimeImg, sx, sy, frameWidth, frameHeight, e.x, e.y, e.drawWidth, e.drawHeight);
         }
-        if(!e.isAlive) {
+        if (!e.isAlive()) {
             e.destroy();
             enemyS.splice(i, 1);
         }

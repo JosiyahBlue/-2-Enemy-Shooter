@@ -24,28 +24,48 @@
     #square {
       width: 50px;
       height: 50px;
-      background-image: url("Player.png");
+      border-radius: 50%;
+      background-image: url("assets/Player.png");
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center center;
       position: absolute;
       top: 40%;
       left: 50%;
       transform: translate(-50%, -50%);
       z-index: 2;
     }
+    #gun {
+      width: 74px;
+      height: 45px;
+      background-image: url("assets/Gun_right.png");
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center center;
+      position: absolute;
+      transform: translate(-50%, -50%);
+      z-index: 1;
+      transition: tranform 0.5s ease;
+    }
     #bullet {
       top: -30px;
       left: -30px;
       width: 10px;
       height: 10px;
+      
       transform: translate(-50%, -50%);
       background: maroon;
       position: absolute;
       z-index: 1;
     }
     .bullet {
-      width: 10px;
-      height: 10px;
+      width: 29px;
+      height: 13px;
+      background-image: url("assets/Bullet.png");
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center center;
       transform: translate(-50%, -50%);
-      background: maroon;
       position: absolute;
     }
     .bullet.enemy {
@@ -66,19 +86,22 @@
       height: 50px;
       background: red;
       position: absolute;
-      top: -60px;
-      left: -60px;
     }
     .enemy {
-      width: 50px;
-      height: 50px;
-      background: red;
+      width: 80px;
+      height: 80px;
+      background-image: url("assets/zombie.gif");
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center center;
       position: absolute;
     }
+    .enemy.flipped {
+      transform: scaleX(-1);
+    }
     .enemy.shooter {
-      width: 40px;
-      height: 40px;
-      background: rgb(96, 183, 212);
+      width: 100px;
+      height: 100px;
       position: absolute;
     }
     
@@ -114,18 +137,21 @@
     <div id="square"></div>
     <div id="bullet"></div>
     <div id="enemy"></div>
+    <div id="gun"></div>
     <div id="gameOverMessage">Game Over!</div>
     <button type="button" id="restartButton"> Restart </button>
+
     <div id="canvas" style="display: none;"></div>
     <canvas id="gameCanvas"></canvas>  
     <script type="module" src="code.js"></script>
     <script type="module" src="square.js"></script>
     <script type="module" src="bullet.js"></script>
     <script type="module" src="enemy.js"></script>
+    <script type="module" src="gun.js"></script>
     <script>
       let scrollPos = window.scrollY;
       document.body.classList.add('noscroll');
-      document.body.style.top = '-${scrollPos}px';
+      document.body.style.top = `-${scrollPos}px`;
     </script>
 </body>
 </html>

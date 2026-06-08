@@ -5,8 +5,8 @@ let bombX = 0;
 let bombY = 0;
 let explodingPosX = 0;
 let explodingPosY = 0;
-let mouseX = window.innerWidth / 2;
-let mouseY = window.innerHeight / 2;
+export let mouseX = window.innerWidth / 2;
+export let mouseY = window.innerHeight / 2;
 
 document.addEventListener('mousemove' , (e) => {
     mouseX = e.clientX;
@@ -28,6 +28,9 @@ class Bullet {
         this.vx = (dx/length) * speed;
         this.vy = (dy/length) * speed;
 
+        this.angleR = Math.atan2(dy, dx);
+        this.angle = this.angleR * (180 / Math.PI);
+
         this.el = document.createElement('div');
         this.el.classList.add('bullet');
         document.body.appendChild(this.el);
@@ -46,6 +49,7 @@ class Bullet {
     updateStyle() {
         this.el.style.left = `${this.x}px`;
         this.el.style.top = `${this.y}px`;
+        this.el.style.transform = `translate(-50%, -50%) rotate(${this.angle}deg)`;
     }
 
     isAlive() {
@@ -65,23 +69,7 @@ class EnemyBullet extends Bullet {
     this.y = y;
 
     this.lifetime = 100;
-
-    const dx = targetX - x;
-    const dy = targetY - y;
-    const speed = 5;
-    const length = Math.sqrt(dx * dx + dy * dy);
-
-    this.vx = (dx / length) * speed;
-    this.vy = (dy / length) * speed;
-
-    this.el.classList.add('enemyBullet');
-    this.updateStyle();
-  }
-
-  update() {
-    this.x += this.vx;
-    this.y += this.vy;
-    this.lifetime--;
+    this.el.classList.add('enemy');
 
     this.updateStyle();
   }
@@ -89,6 +77,7 @@ class EnemyBullet extends Bullet {
   updateStyle() {
     this.el.style.left = `${this.x}px`;
     this.el.style.top = `${this.y}px`;
+    this.el.style.transform = `translate(-50%, -50%) rotate(${this.angle}deg)`;
   }
 
   isAlive() {
@@ -198,10 +187,6 @@ export function updateBullets() {
     }
   }
 }
-
-let isFPressed = false;
-let isSpacePressed = false;
-
 const bombCooldown = 2000;
 let lastBombTime = 0;
 const bulletCooldown = 400;
@@ -267,29 +252,4 @@ export function enemyBullet(enemyX, enemyY) {
   console.log('Bullet SHot');
 }
 
-document.addEventListener('keydown', (ev) => {
-  if (ev.key === 'f') {
-    isFPressed = true;
-    shootBullet();
-  }
-});
-
-document.addEventListener('keyup', (ev) => {
-  if (ev.key === 'f') {
-    isFPressed = false;
-  }
-});
-
-document.addEventListener('keydown', (ev) => {
-  if (ev.key === ' ' && !isSpacePressed) {
-    isSpacePressed = true;
-    shootBomb();
-  }
-});
-
-document.addEventListener('keyup', (ev) => {
-  if (ev.key === ' ') {
-    isSpacePressed = false;
-  }
-});
 

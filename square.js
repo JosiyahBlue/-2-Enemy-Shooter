@@ -9,8 +9,8 @@ let innerWidth = window.innerWidth;
 let innerHeight = window.innerHeight;
 
 const squareStyle = window.getComputedStyle(square);
-let topPos = parseFloat(squareStyle.top) || 0;
-let leftPos = parseFloat(squareStyle.left) || 0;
+export let topPos = parseFloat(squareStyle.top) || 0;
+export let leftPos = parseFloat(squareStyle.left) || 0;
 
 square.style.top = topPos + 'px';
 square.style.left = leftPos + 'px';
