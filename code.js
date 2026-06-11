@@ -3,12 +3,17 @@ import { updateBullets, bullets, enemyBullets, bombs } from './bullet.js';
 import { spawnEnemy, updateEnemy } from './enemy.js';
 import { updateGun } from './gun.js';
 
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
 export let enemies = []
 export let enemyS = []
 
 const squareStyle = window.getComputedStyle(square);
 
-let squareHealth = 100;
+let maxHealth = 100;
+let squareHealth = maxHealth;
+let displayedHealth = maxHealth;
 let animationFrameId = null;
 let spawnEnemyintervalId = null;
 let cancelAnimationFrame = window.cancelAnimationFrame || window.mozCancelAnimationFrame || window.webkitCancelAnimationFrame || window.msCancelAnimationFrame;
@@ -45,6 +50,7 @@ function gameLoop() {
         updateEnemy();
         updatePlayer();
         updateGun();
+        updateHealthBar();
 
         animationFrameId = requestAnimationFrame(gameLoop);
     }
@@ -95,7 +101,53 @@ function isColliding(rect1, rect2) {
 
 }
 
+function drawHealthBar() {
+    // Draw only the health bar (do not clear the canvas here — enemies are drawn elsewhere)
+    const squareEl = document.getElementById('square');
+    if (!squareEl) return;
+    const rect = squareEl.getBoundingClientRect();
 
+    const barWidth = 100;
+    const barHeight = 10;
+    const x = rect.left - 25;
+    const y = rect.top - 30;
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'source-over';
+
+    ctx.fillStyle = "#555";
+    ctx.fillRect(x, y, barWidth, barHeight);
+
+    const healthPercent = squareHealth / maxHealth;
+    const healthWidth = barWidth * healthPercent;
+
+    if (healthPercent > 0.6) {
+        ctx.fillStyle = "#4caf50";
+    } else if (healthPercent > 0.3) {
+        ctx.fillStyle = "#ffeb3b";
+    } else {
+        ctx.fillStyle = "#f44336";
+    }
+
+    if(healthWidth < 0) ctx.fillRect(x, y, 0, barHeight);
+    else ctx.fillRect(x, y, healthWidth, barHeight);
+
+    ctx.strokeStyle = "#000";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x, y, barWidth, barHeight);
+
+    ctx.restore();
+    }
+
+    function updateHealthBar() {
+        const speed = 1;
+        displayedHealth += (squareHealth - displayedHealth) * speed;
+
+        if (Math.abs(squareHealth - displayedHealth) < 0.1) {
+            displayedHealth = squareHealth;
+        }
+        drawHealthBar();
+    }
 
 export function enemyPlayerCollision() {
     const squareEl = document.getElementById('square');
@@ -202,7 +254,7 @@ export function enemyBulletPlayerCollision() {
         if (isColliding(rectEB, squareEl)) {
             // hit player
             console.log('Player hit by enemy bullet');
-            squareHealth -= 25;
+            squareHealth -= 5;
             eb.destroy();
             enemyBullets.splice(i, 1);
         }

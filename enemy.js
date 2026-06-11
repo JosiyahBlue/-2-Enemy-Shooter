@@ -13,10 +13,8 @@ const ctx = canvas.getContext('2d');
 const slimeImg = new Image();
 slimeImg.src = 'assets/slimeSpriteSheet.png';
 
-const frameWidth = 32;
-const frameHeight = 32;
 const frameCellWidth = 32;
-const frameCellHeight = 40;
+const frameCellHeight = 32;
 const frameCropOffsetX = 0;
 const frameCropOffsetY = 4;
 let totalFrames = 10;
@@ -24,9 +22,9 @@ let totalFrames = 10;
 let framesPerRow = null;
 let totalRows = 1;
 slimeImg.onload = () => {
-    framesPerRow = Math.floor(slimeImg.width / frameCellWidth) || totalFrames;
-    totalRows = Math.floor(slimeImg.height / frameCellHeight) || 1;
-    totalFrames = framesPerRow * totalRows;
+    framesPerRow = 10;
+    totalRows = 20;
+    totalFrames = 200;
 };
 
 export function isShot(obj1, obj2) {
@@ -124,18 +122,31 @@ class EnemyShooter extends Enemy {
         this.shotCooldown = 100;
         this.shootTimer = this.shotCooldown;
 
-        // animation timing for canvas rendering
+
+        this.jumpAnim = false;
+        this.shootingAnim = false;
+        this.idleAnim = false;
         this.currentFrame = 0;
         this.frameTimer = 0;
         this.frameDelay = 8 + Math.floor(Math.random() * 8);
 
-        // determine columns and rows from the sprite sheet
-        const cols = framesPerRow || totalFrames;
-        const rows = totalRows || Math.ceil(totalFrames / cols);
+        const cols = 10;
+        const rows = 20;
         this.frameCols = cols;
         this.frameRows = rows;
-        // clamp target row to valid range (third row = index 2)
-        this.rowIndex = Math.min(2, Math.max(0, rows - 1));
+        const rand = Math.floor(Math.random() * 2);
+        this.color = 0;
+
+        console.log(rand);
+
+        if(rand == 0) {this.color = 0; console.log("green")}
+        else if(rand == 1) {this.color = 5; console.log("blue")}
+        else if(rand == 2) {this.color = 10; console.log("red")}
+        else {this.color = 15; console.log("yellow")}
+
+        console.log(this.color);
+
+        this.rowIndex = 0;
 
         this.updateStyle();
     }
@@ -163,30 +174,45 @@ class EnemyShooter extends Enemy {
             this.el.classList.remove('flipped');
         }
 
-        if (Math.abs(trig) > maxDist || this.x < 0 || this.x > WIDTH) {
-            this.vx = (dx / length) * speed;
-        } else if  (Math.abs(trig) > maxDist - 20) {
-            this.vx = 0;
-        } else {
-            this.vx = -(dx / length) * speed;
-        }
-        
-        if (Math.abs(trig) > maxDist || this.y < 0 || this.y > HEIGHT) {
-            this.vy = (dy / length) * speed;
-        } else if (Math.abs(trig) > maxDist - 20) {
-            this.vy = 0;
-        } else {
-            this.vy = -(dy / length) * speed;
-        }
+        if(!this.shootingAnim){
+            this.rowIndex = (2 + this.color);
+            if (Math.abs(trig) > maxDist || this.x < 0 || this.x > WIDTH) {
+                this.vx = (dx / length) * speed;
+            } else if  (Math.abs(trig) > maxDist - 20) {
+                this.vx = 0;
+            } else {
+                this.vx = -(dx / length) * speed;
+            }
+            
+            if (Math.abs(trig) > maxDist || this.y < 0 || this.y > HEIGHT) {
+                this.vy = (dy / length) * speed;
+            } else if (Math.abs(trig) > maxDist - 20) {
+                this.vy = 0;
+            } else {
+                this.vy = -(dy / length) * speed;
+            }
+    }
 
         const inRange = trig < maxDist + 20;
 
+        if(this.vx == 0 && this.vy == 0 && !this.jumpAnim && !this.shootingAnim) {
+            this.rowIndex = this.color;
+        }
+
         if(inRange) {
             this.shootTimer--;
-             if(inRange && (this.shootTimer <= 0)) {
+             if(inRange && (this.shootTimer <= 0) && !this.jumpAnim) {
+                this.vx = 0;
+                this.vy = 0;
+                this.rowIndex = (3 + this.color);
+             }
+        }
+
+        if(this.shootingAnim) {
+            if(this.currentFrame == 6) {
                 enemyBullet(this.x, this.y);
                 this.shootTimer = this.shotCooldown;
-             }
+            }
         }
 
         // animation handled by canvas rendering; nothing to do per-frame here
@@ -238,12 +264,21 @@ export function updateEnemy() {
             e.frameTimer++;
             if (e.frameTimer >= e.frameDelay) {
                 e.frameTimer = 0;
-                e.currentFrame = (e.currentFrame + 1) % e.frameCols;
+                if(e.currentFrame >= e.frameCols - 1) {
+                    e.currentFrame = 0;
+                    if(e.rowIndex == (2 + e.color)) e.jumpAnim = false;
+                    if(e.rowIndex == (3 + e.color)) e.shootingAnim = false;
+                }
+                else {
+                    if(e.rowIndex == (2 + e.color)) e.jumpAnim = true;
+                    if(e.rowIndex == (3 + e.color)) e.shootingAnim = true;
+                    e.currentFrame++;
+                }
             }
-            const sx = e.currentFrame * frameCellWidth + frameCropOffsetX;
-            const sy = e.rowIndex * frameCellHeight + frameCropOffsetY;
+            const sx = e.currentFrame * frameCellWidth;
+            const sy = e.rowIndex * frameCellHeight;
             ctx.imageSmoothingEnabled = false;
-            ctx.drawImage(slimeImg, sx, sy, frameWidth, frameHeight, e.x, e.y, e.drawWidth, e.drawHeight);
+            ctx.drawImage(slimeImg, sx, sy, frameCellWidth, frameCellHeight, e.x, e.y, e.drawWidth, e.drawHeight);
         }
         if (!e.isAlive()) {
             e.destroy();
@@ -273,12 +308,11 @@ export function spawnEnemy() {
         spawnTop = Math.random() * (HEIGHT - 40);
         console.log("left")
     }
-    let isShooter = Math.random() < 0.25;
+    let isShooter = Math.random() < 0.75;
     // compute current square position at spawn time (safe lookup)
     const squareEl = document.getElementById('square');
     const squareX = squareEl ? parseInt(squareEl.style.left, 10) : WIDTH/2;
     const squareY = squareEl ? parseInt(squareEl.style.top, 10) : HEIGHT/2;
-    console.log(`Spawning enemy at (${spawnTop}, ${spawnLeft}) with target (${squareX}, ${squareY})`);
     if(isShooter) {
         enemyS.push(new EnemyShooter(spawnLeft, spawnTop, squareX, squareY));
     } else enemies.push(new Enemy(spawnLeft, spawnTop, squareX, squareY));

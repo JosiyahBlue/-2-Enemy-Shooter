@@ -247,9 +247,7 @@ export function enemyBullet(enemyX, enemyY) {
   const squareRect = square.getBoundingClientRect();
   const squareCenterX = squareRect.left + squareRect.width / 2;
   const squareCenterY = squareRect.top + squareRect.height / 2;
-  console.log(enemyX, enemyY, squareCenterX, squareCenterY);
   enemyBullets.push(new EnemyBullet(enemyX + 20, enemyY + 20, squareCenterX, squareCenterY));
-  console.log('Bullet SHot');
 }
 
 
