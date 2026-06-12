@@ -1,6 +1,7 @@
 import { enemyBullet } from './bullet.js';
 import { endGame, enemies, enemyS, enemyPlayerCollision, enemyShooterPlayerCollision,
-    bulletEnemyCollision, enemyBulletPlayerCollision} from './code.js';
+    bulletEnemyCollision, enemyBulletPlayerCollision,
+    waveNumber} from './code.js';
 let squareX = parseInt(square.style.left, 10);
 let squareY = parseInt(square.style.top, 10);
 const WIDTH = window.innerWidth;
@@ -9,6 +10,10 @@ let squareHealth = 100;
 let gameOver = false;
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+
+let slimeAttack1 = new Audio('assets/Sounds/SlimeAttack.wav');
+let slimeAttack2 = new Audio('assets/Sounds/SlimeAttack2.wav');
+let slimeJump = new Audio('assets/Sounds/SlimeJump.wav');
 
 const slimeImg = new Image();
 slimeImg.src = 'assets/slimeSpriteSheet.png';
@@ -42,11 +47,11 @@ class Enemy {
         this.x = x;
         this.y = y;
 
-        this.health = 100;
+        this.health = (waveNumber * 10) + 90;
 
         const dx = targetX - x;
         const dy = targetY - y;
-        const speed = 1.5;
+        const speed = 2.5;
         const length = Math.sqrt(dx * dx + dy * dy);
 
         this.vx = (dx/length) * speed;
@@ -103,15 +108,15 @@ class EnemyShooter extends Enemy {
         this.x = x;
         this.y = y;
 
-        this.health = 100;
+        this.health = (waveNumber * 15) + 90;
 
         const dx = targetX - x;
         const dy = targetY - y;
-        const speed = 1.5;
+        this.speed = 1.5;
         const length = Math.sqrt(dx * dx + dy * dy);
 
-        this.vx = (dx/length) * speed;
-        this.vy = (dy/length) * speed;
+        this.vx = (dx/length) * this.speed;
+        this.vy = (dy/length) * this.speed;
 
         this.el.classList.add('shooter');
         const cs = window.getComputedStyle(this.el);
@@ -121,7 +126,8 @@ class EnemyShooter extends Enemy {
         this.el.style.pointerEvents = 'none';
         this.shotCooldown = 100;
         this.shootTimer = this.shotCooldown;
-
+        this.shot = false;
+        this.redCooldown = 0;
 
         this.jumpAnim = false;
         this.shootingAnim = false;
@@ -129,22 +135,34 @@ class EnemyShooter extends Enemy {
         this.currentFrame = 0;
         this.frameTimer = 0;
         this.frameDelay = 8 + Math.floor(Math.random() * 8);
+        this.flipped = false;
 
         const cols = 10;
         const rows = 20;
         this.frameCols = cols;
         this.frameRows = rows;
-        const rand = Math.floor(Math.random() * 2);
-        this.color = 0;
+        const rand = Math.floor(Math.random() * 4);
+        this.colorIndex = 0;
+        this.colorName = 'green';
 
-        console.log(rand);
-
-        if(rand == 0) {this.color = 0; console.log("green")}
-        else if(rand == 1) {this.color = 5; console.log("blue")}
-        else if(rand == 2) {this.color = 10; console.log("red")}
-        else {this.color = 15; console.log("yellow")}
-
-        console.log(this.color);
+        if (rand === 0) {
+            this.colorIndex = 0;
+            this.health = (waveNumber * 15) + 190;
+            this.colorName = 'green';
+        } else if (rand === 1) {
+            this.colorIndex = 5;
+            this.speed = 4;
+            this.shotCooldown = 60;
+            this.frameDelay = 5 + Math.floor(Math.random() * 8);
+            this.colorName = 'blue';
+        } else if (rand === 2) {
+            this.colorIndex = 10;
+            this.colorName = 'red';
+        } else {
+            this.colorIndex = 15;
+            this.shotCooldown = 40;
+            this.colorName = 'yellow';
+        }
 
         this.rowIndex = 0;
 
@@ -162,57 +180,97 @@ class EnemyShooter extends Enemy {
 
         const dx = squareX - this.x;
         const dy = squareY - this.y;
-        const speed = 1.5;
         const length = Math.sqrt(dx * dx + dy * dy) || 1;
 
         let trig = Math.hypot(dy, dx);
-        let maxDist = 300;
+        
+        if(this.colorName == "yellow") {
+            this.maxDist = 550
+            this.inRange = trig < this.maxDist + 50
+        } else this.maxDist = 300;
 
-        if (squareX < this.x) {
+        this.inRange = trig < this.maxDist + 20;
+
+        if (squareX > this.x) {
             this.el.classList.add('flipped');
+            this.flipped = true;
         } else {
             this.el.classList.remove('flipped');
+            this.flipped = false;
         }
 
         if(!this.shootingAnim){
-            this.rowIndex = (2 + this.color);
-            if (Math.abs(trig) > maxDist || this.x < 0 || this.x > WIDTH) {
-                this.vx = (dx / length) * speed;
-            } else if  (Math.abs(trig) > maxDist - 20) {
+            this.rowIndex = (2 + this.colorIndex);
+            if (Math.abs(trig) > this.maxDist || this.x < 0 || this.x > WIDTH) {
+                this.vx = (dx / length) * this.speed;
+            } else if  (Math.abs(trig) > this.maxDist - 20) {
                 this.vx = 0;
             } else {
-                this.vx = -(dx / length) * speed;
+                this.vx = -(dx / length) * this.speed;
             }
             
-            if (Math.abs(trig) > maxDist || this.y < 0 || this.y > HEIGHT) {
-                this.vy = (dy / length) * speed;
-            } else if (Math.abs(trig) > maxDist - 20) {
+            if (Math.abs(trig) > this.maxDist || this.y < 0 || this.y > HEIGHT - 60) {
+                this.vy = (dy / length) * this.speed;
+            } else if (Math.abs(trig) > this.maxDist - 20) {
                 this.vy = 0;
             } else {
-                this.vy = -(dy / length) * speed;
+                this.vy = -(dy / length) * this.speed;
             }
-    }
-
-        const inRange = trig < maxDist + 20;
+        }
 
         if(this.vx == 0 && this.vy == 0 && !this.jumpAnim && !this.shootingAnim) {
-            this.rowIndex = this.color;
+            this.rowIndex = this.colorIndex;
         }
 
-        if(inRange) {
+        if(this.inRange && this.y < HEIGHT - 60 && this.y > 0 && this.x > 0 && this.x < WIDTH) {
             this.shootTimer--;
-             if(inRange && (this.shootTimer <= 0) && !this.jumpAnim) {
+             if(this.inRange && (this.shootTimer <= 0) && !this.jumpAnim) {
                 this.vx = 0;
                 this.vy = 0;
-                this.rowIndex = (3 + this.color);
+                this.rowIndex = (3 + this.colorIndex);
              }
         }
-
-        if(this.shootingAnim) {
-            if(this.currentFrame == 6) {
-                enemyBullet(this.x, this.y);
-                this.shootTimer = this.shotCooldown;
+        if(this.redCooldown != 0) {
+            this.redCooldown--;
+        }
+        if(this.colorName == "red") {
+            if(this.shootingAnim && this.redCooldown == 0 && (this.currentFrame == 6 || this.currentFrame == 7 || this.currentFrame == 8)) {
+                if(this.currentFrame == 6 && !this.shot) {
+                    if(Math.random() < .50) {
+                    slimeAttack1.play();
+                } else slimeAttack2.play();
+                    enemyBullet(this.x, this.y, this.colorName);
+                    this.shootTimer = this.shotCooldown;
+                    this.redCooldown = 3;
+                }
             }
+        }
+        else if(this.colorName == "yellow") {
+            if(this.shootingAnim) {
+                this.frameDelay = 4;
+                if(this.shootingAnim && this.currentFrame == 6 && !this.shot) {
+                    if(Math.random() < .50) {
+                    slimeAttack1.play();
+                } else slimeAttack2.play();
+                    enemyBullet(this.x, this.y, this.colorName);
+                    this.shootTimer = this.shotCooldown;
+                    this.shot = true;
+                }
+            } else {
+                this.frameDelay = 8 + Math.floor(Math.random() * 8);
+            }
+        }
+        else if(this.shootingAnim && this.currentFrame == 6 && !this.shot) {
+            if(Math.random() < .50) {
+                    slimeAttack1.play();
+                } else slimeAttack2.play();
+            enemyBullet(this.x, this.y, this.colorName);
+            this.shootTimer = this.shotCooldown;
+            this.shot = true;
+        }
+
+        if(this.jumpAnim && this.currentFrame == 8) {
+            slimeJump.play();
         }
 
         // animation handled by canvas rendering; nothing to do per-frame here
@@ -266,19 +324,28 @@ export function updateEnemy() {
                 e.frameTimer = 0;
                 if(e.currentFrame >= e.frameCols - 1) {
                     e.currentFrame = 0;
-                    if(e.rowIndex == (2 + e.color)) e.jumpAnim = false;
-                    if(e.rowIndex == (3 + e.color)) e.shootingAnim = false;
+                    if(e.rowIndex == (2 + e.colorIndex)) e.jumpAnim = false;
+                    if(e.rowIndex == (3 + e.colorIndex)) e.shootingAnim = false;
+                    e.shot = false;
                 }
                 else {
-                    if(e.rowIndex == (2 + e.color)) e.jumpAnim = true;
-                    if(e.rowIndex == (3 + e.color)) e.shootingAnim = true;
+                    if(e.rowIndex == (2 + e.colorIndex)) e.jumpAnim = true;
+                    if(e.rowIndex == (3 + e.colorIndex)) e.shootingAnim = true;
                     e.currentFrame++;
                 }
             }
             const sx = e.currentFrame * frameCellWidth;
             const sy = e.rowIndex * frameCellHeight;
             ctx.imageSmoothingEnabled = false;
-            ctx.drawImage(slimeImg, sx, sy, frameCellWidth, frameCellHeight, e.x, e.y, e.drawWidth, e.drawHeight);
+            if (e.flipped) {
+                ctx.save();
+                ctx.translate(e.x + e.drawWidth, e.y);
+                ctx.scale(-1, 1);
+                ctx.drawImage(slimeImg, sx, sy, frameCellWidth, frameCellHeight, 0, 0 - 35, e.drawWidth, e.drawHeight);
+                ctx.restore();
+            } else {
+                ctx.drawImage(slimeImg, sx, sy, frameCellWidth, frameCellHeight, e.x, e.y - 35, e.drawWidth, e.drawHeight);
+            }
         }
         if (!e.isAlive()) {
             e.destroy();
@@ -308,8 +375,7 @@ export function spawnEnemy() {
         spawnTop = Math.random() * (HEIGHT - 40);
         console.log("left")
     }
-    let isShooter = Math.random() < 0.75;
-    // compute current square position at spawn time (safe lookup)
+    let isShooter = Math.random() < 0.45;
     const squareEl = document.getElementById('square');
     const squareX = squareEl ? parseInt(squareEl.style.left, 10) : WIDTH/2;
     const squareY = squareEl ? parseInt(squareEl.style.top, 10) : HEIGHT/2;

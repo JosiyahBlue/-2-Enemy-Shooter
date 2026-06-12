@@ -1,10 +1,20 @@
 import { updatePlayer, square } from './square.js';
-import { updateBullets, bullets, enemyBullets, bombs } from './bullet.js';
+import { updateBullets, bullets, enemyBullets, bombs, bombCount, addBomb, resetBombCount } from './bullet.js';
 import { spawnEnemy, updateEnemy } from './enemy.js';
 import { updateGun } from './gun.js';
+import { spawnCollectable, updateCollectables } from './collectibles.js';
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
+
+let zom1 = new Audio('assets/Sounds/ZombieHurt1.wav');
+let zom2 = new Audio('assets/Sounds/ZombieHurt2.ogg');
+let slimeHurt1 = new Audio('assets/Sounds/SlimeDamaged.wav');
+let slimeHurt2 = new Audio('assets/Sounds/SlimeDamaged2.wav');
+let pickUp = new Audio('assets/Sounds/Pickup.ogg');
+let playerHurt = new Audio('assets/Sounds/PlayerHurt.wav');
+let click = new Audio('assets/Sounds/Click.ogg');
+let gameOverSound = new Audio('assets/Sounds/GameOver.wav');
 
 export let enemies = []
 export let enemyS = []
@@ -17,9 +27,21 @@ let displayedHealth = maxHealth;
 let animationFrameId = null;
 let spawnEnemyintervalId = null;
 let cancelAnimationFrame = window.cancelAnimationFrame || window.mozCancelAnimationFrame || window.webkitCancelAnimationFrame || window.msCancelAnimationFrame;
+
 export let gameOver = false;
-let gameState = "playing";
+export let gameState = "menu";
+export let waveNumber = 0;
+let waveEnemyTotal = 0;
+let waveSpawnedCount = 0;
+let waveSpawning = false;
+
 const restartButton = document.getElementById('restartButton');
+const menuButton = document.getElementById('menuButton');
+const menuOverlay = document.getElementById('menuOverlay');
+const playButton = document.getElementById('playButton');
+const waveDisplay = document.getElementById('waveDisplay');
+const bombCounter = document.getElementById('bombCounter');
+const bombCountText = document.getElementById('bombCountText');
 const gameOverMessage = document.getElementById('gameOverMessage');
 
 function destroyAllEnemies() {
@@ -51,14 +73,22 @@ function gameLoop() {
         updatePlayer();
         updateGun();
         updateHealthBar();
-
+        const collected = updateCollectables();
+        processCollectables(collected);
+        if (!waveSpawning && enemies.length === 0 && enemyS.length === 0 && waveSpawnedCount >= waveEnemyTotal) {
+            beginWave();
+        }
+        updateBombDisplay();
         animationFrameId = requestAnimationFrame(gameLoop);
     }
 }
 
 export function endGame() {
+    gameOverSound.play();
     gameState = "game-over";
     clearInterval(spawnEnemyintervalId);
+    spawnEnemyintervalId = null;
+    waveSpawning = false;
     if (animationFrameId) {
         cancelAnimationFrame(animationFrameId);
         animationFrameId = null;
@@ -66,31 +96,138 @@ export function endGame() {
     destroyAllEnemies();
     destroyAllProjectiles();
 
+    menuOverlay.style.display = 'none';
+    menuOverlay.style.visibility = 'hidden';
     restartButton.style.visibility = 'visible';
-    if (gameOverMessage) {
-        gameOverMessage.style.visibility = 'visible';
+    menuButton.style.visibility = 'visible';
+    waveDisplay.style.visibility = 'hidden';
+    gameOverMessage.style.visibility = 'visible';
+}
+
+document.getElementById('restartButton').addEventListener("click", function() {
+    click.play();
+    restart();
+});
+menuButton.addEventListener("click", function() {
+    click.play();
+    showMenu();
+});
+playButton.addEventListener("click", function() {
+    click.play();
+    startGame();
+});
+
+function showMenu() {
+    gameState = "menu";
+    clearInterval(spawnEnemyintervalId);
+    spawnEnemyintervalId = null;
+    if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
     }
-}
-
-if (gameState == "playing") {
-    spawnEnemyintervalId = setInterval(spawnEnemy, 2000);
-
-    gameLoop();
-}
-
-document.getElementById('restartButton').addEventListener("click", restart);
-
-function restart() {
-    destroyAllEnemies();
-    destroyAllProjectiles();
-    gameState = "playing";
-    squareHealth = 100;
+    menuOverlay.style.display = 'flex';
+    menuOverlay.style.visibility = 'visible';
     restartButton.style.visibility = 'hidden';
+    menuButton.style.visibility = 'hidden';
+    waveDisplay.style.visibility = 'hidden';
+    bombCounter.style.visibility = 'hidden';
     if (gameOverMessage) {
         gameOverMessage.style.visibility = 'hidden';
     }
-    spawnEnemyintervalId = setInterval(spawnEnemy, 2000);
+}
+
+function startGame() {
+    destroyAllEnemies();
+    destroyAllProjectiles();
+    resetBombCount();
+    squareHealth = 100;
+    displayedHealth = 100;
+    waveNumber = 0;
+    waveEnemyTotal = 0;
+    waveSpawnedCount = 0;
+    waveSpawning = false;
+    gameState = "playing";
+    menuOverlay.style.display = 'none';
+    menuOverlay.style.visibility = 'hidden';
+    restartButton.style.visibility = 'hidden';
+    menuButton.style.visibility = 'hidden';
+    waveDisplay.style.visibility = 'visible';
+    bombCounter.style.visibility = 'visible';
+    if (gameOverMessage) {
+        gameOverMessage.style.visibility = 'hidden';
+    }
+    updateBombDisplay();
+    beginWave();
     gameLoop();
+}
+
+function restart() {
+    startGame();
+}
+
+function updateBombDisplay() {
+    if (bombCountText) {
+        bombCountText.textContent = bombCount;
+    }
+}
+
+function processCollectables(collected) {
+    if (!collected || !collected.length) return;
+    for (const type of collected) {
+        if (type === 'health') {
+            pickUp.play();
+            squareHealth = Math.min(maxHealth, squareHealth + 30);
+        } else if (type === 'bomb') {
+            pickUp.play();
+            addBomb(1);
+            updateBombDisplay();
+        }
+    }
+}
+
+function updateWaveDisplay() {
+    if (waveDisplay) {
+        waveDisplay.textContent = `Wave ${waveNumber}`;
+    }
+}
+
+function beginWave() {
+    waveNumber += 1;
+    const baseEnemies = 6;
+    const extraPerWave = 4;
+    waveEnemyTotal = baseEnemies + (waveNumber - 1) * extraPerWave;
+    waveSpawnedCount = 0;
+    const baseInterval = 1800;
+    const decreasePerWave = 120;
+    const spawnInterval = Math.max(300, baseInterval - (waveNumber - 1) * decreasePerWave);
+    waveSpawning = true;
+    updateWaveDisplay();
+    if (spawnEnemyintervalId) {
+        clearInterval(spawnEnemyintervalId);
+    }
+    spawnEnemyintervalId = setInterval(() => {
+        if (gameState !== 'playing' || waveSpawnedCount >= waveEnemyTotal) {
+            clearInterval(spawnEnemyintervalId);
+            spawnEnemyintervalId = null;
+            waveSpawning = false;
+            return;
+        }
+        spawnEnemy();
+        waveSpawnedCount += 1;
+    }, spawnInterval);
+}
+
+showMenu();
+
+function getHitboxRect(rect, inset = 10) {
+    const xInset = Math.min(inset, rect.width / 2 - 1);
+    const yInset = Math.min(inset, rect.height / 2 - 1);
+    return {
+        left: rect.left + xInset,
+        right: rect.right - xInset,
+        top: rect.top + yInset,
+        bottom: rect.bottom - yInset,
+    };
 }
 
 function isColliding(rect1, rect2) {
@@ -98,7 +235,6 @@ function isColliding(rect1, rect2) {
         rect1.bottom < rect2.top || rect1.top > rect2.bottom)) {
         return true;
     } else return false;
-
 }
 
 function drawHealthBar() {
@@ -153,20 +289,18 @@ export function enemyPlayerCollision() {
     const squareEl = document.getElementById('square');
     if (!squareEl) return;
 
-    const rect2 = squareEl.getBoundingClientRect();
+    const rect2 = getHitboxRect(squareEl.getBoundingClientRect(), 12);
 
-    // enemies hitting player (existing behavior)
     for (let i = enemies.length - 1; i >= 0; i--) {
         const enemy = enemies[i];
 
         if (!enemy.el || !enemy) continue;
         const el = enemy.el;
-        const rect1 = el.getBoundingClientRect();
+        const rect1 = getHitboxRect(el.getBoundingClientRect(), 10);
 
         if (isColliding(rect1, rect2)) {
-            console.log("💥 Collision detected!");
-            squareHealth -= 50;
-            console.log(`Square health: ${squareHealth}`);
+            playerHurt.play();
+            squareHealth -= 35;
             enemy.destroy();
             enemies.splice(i, 1);
         }
@@ -177,17 +311,16 @@ export function enemyShooterPlayerCollision() {
     const squareEl = document.getElementById('square');
     if (!squareEl) return;
 
-    const rect2 = squareEl.getBoundingClientRect();
+    const rect2 = getHitboxRect(squareEl.getBoundingClientRect(), 12);
     for(let i = enemyS.length - 1; i >= 0; i--) {
         const en = enemyS[i];
 
         if(!en.el || !en) continue;
         const el = en.el;
-        const rect1 = el.getBoundingClientRect();
+        const rect1 = getHitboxRect(el.getBoundingClientRect(), 16);
         if (isColliding(rect1, rect2)) {
-            console.log("💥 Collision detected!");
-            squareHealth -= 50;
-            console.log(`Square health: ${squareHealth}`);
+            playerHurt.play();
+            squareHealth -= 35;
             en.destroy();
             enemyS.splice(i, 1);
         }
@@ -202,19 +335,28 @@ export function bulletEnemyCollision(){
             bullets.splice(i, 1);
             continue;
         }
-        const rectB = b.el.getBoundingClientRect();
+        const rectB = getHitboxRect(b.el.getBoundingClientRect(), 4);
         let hit = false;
 
         for (let j = enemies.length - 1; j >= 0; j--) {
             const enemy = enemies[j];
             if(!enemy || !enemy.el) continue;
-            const rectE = enemy.el.getBoundingClientRect();
+            const rectE = getHitboxRect(enemy.el.getBoundingClientRect(), 10);
             if (isColliding(rectB, rectE)) {
+                if(Math.random() < .50) {
+                    zom1.play();
+                } else zom2.play();
+
                 enemy.health -= 50;
                 b.destroy();
                 bullets.splice(i, 1);
                 hit = true;
                 if (!enemy.isAlive()) {
+                    if (Math.random() < 0.15) {
+                        spawnCollectable('health', enemy.x + 20, enemy.y + 20);
+                    } else if (Math.random() < 0.40) {
+                        spawnCollectable('bomb', enemy.x, enemy.y);
+                    }
                     enemy.destroy();
                     enemies.splice(j, 1);
                 }
@@ -226,13 +368,20 @@ export function bulletEnemyCollision(){
         for (let j = enemyS.length - 1; j >= 0; j--) {
             const enemy = enemyS[j];
             if(!enemy || !enemy.el) continue;
-            const rectE = enemy.el.getBoundingClientRect();
+            const rectE = getHitboxRect(enemy.el.getBoundingClientRect(), 16);
             if (isColliding(rectB, rectE)) {
-                // hit
+                if(Math.random() < .50) {
+                    slimeHurt1.play();
+                } else slimeHurt2.play();
+
                 enemy.health -= 50;
                 b.destroy();
                 bullets.splice(i, 1);
                 if (!enemy.isAlive()) {
+                    
+                    if (Math.random() < 0.30) {
+                        spawnCollectable('health', enemy.x + 20, enemy.y + 20);
+                    } else if(Math.random() < 0.20) spawnCollectable('bomb', enemy.x, enemy.y);
                     enemy.destroy();
                     enemyS.splice(j, 1);
                 }
@@ -249,16 +398,25 @@ export function enemyBulletPlayerCollision() {
             enemyBullets.splice(i, 1);
             continue;
         }
-        const squareEl = square.getBoundingClientRect();
-        const rectEB = eb.el.getBoundingClientRect();
+        const squareEl = getHitboxRect(square.getBoundingClientRect(), 12);
+        const rectEB = getHitboxRect(eb.el.getBoundingClientRect(), 4);
         if (isColliding(rectEB, squareEl)) {
-            // hit player
-            console.log('Player hit by enemy bullet');
-            squareHealth -= 5;
+            playerHurt.play();
+            squareHealth -= 15;
             eb.destroy();
             enemyBullets.splice(i, 1);
         }
     }
 
 }
-    
+
+document.querySelectorAll('img').forEach(img => {
+        img.addEventListener('dragstart', event => {
+            event.preventDefault();
+        });
+});
+
+document.addEventListener('contextmenu', (e) => {
+  e.preventDefault();
+});
+document.addEventListener('selectstart', e => e.preventDefault());

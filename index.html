@@ -69,11 +69,25 @@
       position: absolute;
     }
     .bullet.enemy {
-      width: 10px;
-      height: 10px;
+      width: 50px;
+      height: 50px;
       transform: translate(-50%, -50%);
-      background: lightseagreen;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center center;
       position: absolute;
+    }
+    .bullet.enemy.green {
+      background-image: url("assets/SlimeShots/GreenSlimeShot.gif");
+    }
+    .bullet.enemy.blue {
+      background-image: url("assets/SlimeShots/BlueSlimeShot.gif");
+    }
+    .bullet.enemy.red {
+      background-image: url("assets/SlimeShots/RedSlimeShot.gif");
+    }
+    .bullet.enemy.yellow {
+      background-image: url("assets/SlimeShots/YellowSlimeShot.gif");
     }
     .bullet.bomb {
       width: 20px;
@@ -120,17 +134,127 @@
     }
     #restartButton {
       height: 40px;
-      width: 70px;
+      width: 80px;
       font-weight: bold;
       font-size: 100%;
       position: absolute;
       top: 50%;
-      left: 50%;
+      left: 45%;
       transform: translate(-50%, -50%);
-      background: purple;
+      background: darkslategrey;
+      color: white;
       visibility: hidden;
+      color: white;
+      border: none;
+      border-radius: 8px;
       z-index: 1;
-    } 
+      cursor: pointer;
+    }
+    #menuButton {
+      height: 40px;
+      width: 80px;
+      font-weight: bold;
+      font-size: 100%;
+      position: absolute;
+      transform: translate(-50%, -50%);
+      top: 50%;
+      left: 55%;
+      background: darkslategrey;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      visibility: hidden;
+      z-index: 101;
+      cursor: pointer;
+    }
+    #waveDisplay {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      padding: 8px 14px;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      font-size: 26px;
+      font-weight: bold;
+      border-radius: 10px;
+      z-index: 101;
+      visibility: hidden;
+    }
+    #menuOverlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+    #menuContent {
+      text-align: center;
+      color: white;
+    }
+    #menuContent h1 {
+      margin-bottom: 24px;
+      font-size: 3rem;
+    }
+    #menuContent button {
+      width: 160px;
+      height: 48px;
+      margin: 8px;
+      font-size: 1rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      background: #ff6a00;
+      color: white;
+    }
+
+    .collectable {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center center;
+      z-index: 1;
+    }
+    .collectable.health { background-image:url("assets/Heart.png"); }
+    .collectable.bomb { background-image:url("assets/Bomb.png"); }
+    .collectable.hide {
+      visibility: hidden;
+    }
+
+    #bombCounter {
+      position: absolute;
+      top: 10px;
+      left: 130px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      font-size: 38px;
+      font-weight: bold;
+      border-radius: 10px;
+      z-index: 101;
+      visibility: hidden;
+    }
+    #bombIcon {
+      width: 50px;
+      height: 50px;
+    }
+    .bombProjectile {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center center;
+      z-index: 2;
+    }
+
   </style>
 </head>
 <body>
@@ -138,8 +262,21 @@
     <div id="bullet"></div>
     <div id="enemy"></div>
     <div id="gun"></div>
+    <div id="waveDisplay">Wave 0</div>
+    <div id="bombCounter"><img id="bombIcon" src="assets/Bomb.png" alt="Bomb"><span id="bombCountText">0</span></div>
     <div id="gameOverMessage">Game Over!</div>
+    <button type="button" id="menuButton">Menu</button>
     <button type="button" id="restartButton"> Restart </button>
+    <div id="menuOverlay">
+      <div id="menuContent">
+        <h1>Enemy Shooter</h1>
+        <button id="playButton">Play</button>
+        <div id="menuIcons">
+          <img class="menu-icon" src="assets/Gun_right.png" style="scale: 300%; top: 19%; left: 54%; position:absolute; transform: rotate(-30deg);">
+          <img class="menu-icon" src="assets/Player.png" style="scale: 300%; top: 30%; left: 48%; position:absolute;">
+        </div>
+      </div>
+    </div>
 
     <div id="canvas" style="display: none;"></div>
     <canvas id="gameCanvas"></canvas>  

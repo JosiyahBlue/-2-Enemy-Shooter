@@ -1,12 +1,23 @@
 export let bombs = [];
 export let bullets = [];
 export let enemyBullets = [];
+export let bombCount = 0;
 let bombX = 0;
 let bombY = 0;
 let explodingPosX = 0;
 let explodingPosY = 0;
 export let mouseX = window.innerWidth / 2;
 export let mouseY = window.innerHeight / 2;
+
+let explosion = new Audio('assets/Sounds/Explosion.wav');
+
+export function addBomb(amount) {
+  bombCount += amount;
+}
+
+export function resetBombCount() {
+  bombCount = 0;
+}
 
 document.addEventListener('mousemove' , (e) => {
     mouseX = e.clientX;
@@ -18,7 +29,7 @@ class Bullet {
         this.x = x;
         this.y = y;
 
-        this.lifetime = 100;
+        this.lifetime = 200;
 
         const dx = targetX - x;
         const dy = targetY - y;
@@ -62,14 +73,18 @@ class Bullet {
 }
 
 class EnemyBullet extends Bullet {
-  constructor(x, y, targetX, targetY) {
+  constructor(x, y, targetX, targetY, color) {
     super(x, y, targetX, targetY);
 
     this.x = x;
     this.y = y;
+    this.color = color;
 
-    this.lifetime = 100;
+    this.lifetime = 200;
     this.el.classList.add('enemy');
+    if (color) {
+      this.el.classList.add(color);
+    }
 
     this.updateStyle();
   }
@@ -104,8 +119,10 @@ class BombBullet extends Bullet {
     this.vx = (dx/length) * speed;
     this.vy = (dy/length) * speed;
 
-    this.el.classList.add('bomb');
+    this.el.classList.add('bombProjectile');
     this.friction = 0.94; // Friction factor for slowing down
+    this.bombAnimTimer = 0;
+    this.bombState = 0;
   }
 
   returnPos() {
@@ -120,14 +137,22 @@ class BombBullet extends Bullet {
     this.vy *= this.friction;
     this.lifetime--;
 
-    this.updateStyle();
+    this.bombAnimTimer += .3;
+    const animationSpeed = Math.max(1, Math.ceil(this.lifetime / 20));
+    if (this.bombAnimTimer >= animationSpeed) {
+      this.bombAnimTimer = 0;
+      this.bombState = 1 - this.bombState;
+    }
 
-    
+    this.updateStyle();
   }
 
   updateStyle() {
     this.el.style.left = `${this.x}px`;
     this.el.style.top = `${this.y}px`;
+    this.el.style.backgroundImage = this.bombState === 0
+      ? 'url("assets/Bomb.png")'
+      : 'url("assets/BombExploding.png")';
   }
   
   isAlive() {
@@ -195,7 +220,7 @@ let lastBulletTime = 0;
 export function shootBullet() {
   const now = Date.now();
   if(now - lastBulletTime < bulletCooldown) {
-    return;
+    return false;
   }
   lastBulletTime = now;
   const square = document.getElementById('square');
@@ -203,9 +228,11 @@ export function shootBullet() {
   const squareCenterX = squareRect.left + squareRect.width / 2;
   const squareCenterY = squareRect.top + squareRect.height / 2;
   bullets.push(new Bullet(squareCenterX, squareCenterY, mouseX, mouseY));
+  return true;
 }
 
 function explode(x, y) {
+  explosion.play();
   bullets.push(new Bullet(x, y, x, y + 10));
   bullets.push(new Bullet(x, y, x + 10, y));
   bullets.push(new Bullet(x, y, x + 10, y - 10));
@@ -231,23 +258,28 @@ function explode(x, y) {
 export function shootBomb() {
   const now = Date.now();
   if (now - lastBombTime < bombCooldown) {
-    return;
+    return false;
   }
+  if (bombCount <= 0) {
+    return false;
+  }
+  bombCount--;
   lastBombTime = now;
+
   const square = document.getElementById('square');
   const squareRect = square.getBoundingClientRect();
   const squareCenterX = squareRect.left + squareRect.width / 2;
   const squareCenterY = squareRect.top + squareRect.height / 2;
-  
   bombs.push(new BombBullet(squareCenterX, squareCenterY, mouseX, mouseY));
+  return true;
 }
 
-export function enemyBullet(enemyX, enemyY) {
+export function enemyBullet(enemyX, enemyY, color) {
   const square = document.getElementById('square');
   const squareRect = square.getBoundingClientRect();
   const squareCenterX = squareRect.left + squareRect.width / 2;
   const squareCenterY = squareRect.top + squareRect.height / 2;
-  enemyBullets.push(new EnemyBullet(enemyX + 20, enemyY + 20, squareCenterX, squareCenterY));
+  enemyBullets.push(new EnemyBullet(enemyX + 35, enemyY + 35, squareCenterX, squareCenterY, color));
 }
 
 
