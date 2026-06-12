@@ -5,6 +5,13 @@ export const square = document.getElementById('square');
 const step = 2;
 const keysPressed = {};
 let animationFrameId = null;
+const dashStep = 10;
+const maxDashDuration = 15;
+let dashDuration = maxDashDuration;
+let dashCooldown = 200;
+let extraDashCooldown = 15;
+let dashBlocked = false;
+let dashSound = new Audio('assets/Sounds/Swoosh.wav');
 
 let innerWidth = window.innerWidth;
 let innerHeight = window.innerHeight;
@@ -18,17 +25,58 @@ export let leftPos = parseFloat(squareStyle.left) || 0;
 square.style.top = topPos + 'px';
 square.style.left = leftPos + 'px';
 
+export function updateDash() {
+  if(dashDuration < maxDashDuration) {
+    dashDuration += maxDashDuration / dashCooldown;
+    console.log(dashDuration);
+    if(extraDashCooldown > 15) {
+      extraDashCooldown++;
+    }
+  } else extraDashCooldown = 15;
+  if(extraDashCooldown >= 14) dashBlocked = false;
+}
+
 function moveSquare() {
   if (!square) {
     console.log('Square element not found!');
     return;
   }
-  if (topPos - square.clientHeight/2 > 0) if (keysPressed['w']) topPos -= step;
-  if (topPos - square.clientHeight/2 < innerHeight - 40) if (keysPressed['s']) topPos += step;
-  if (leftPos - square.clientWidth/2 > 0) if (keysPressed['a']) leftPos -= step;
-  if (leftPos - square.clientWidth/2 < innerWidth) if (keysPressed['d']) leftPos += step;
+
+  if(dashDuration <= 0) {
+    dashBlocked = true;
+  }
+
+  if (topPos - square.clientHeight/2 > 0 && keysPressed['w'] && keysPressed[' '] && dashDuration > 0 && !dashBlocked) {
+    dashSound.play();
+    topPos -= dashStep;
+    dashDuration--;
+    extraDashCooldown = 0;
+
+  } else if(topPos - square.clientHeight/2 > 0 && keysPressed['w']) topPos -= step;
+  if (topPos - square.clientHeight/2 < innerHeight - 40 && keysPressed['s'] && keysPressed[' '] && dashDuration > 0 && !dashBlocked) {
+    dashSound.play();
+    topPos += dashStep;
+    dashDuration--;
+    extraDashCooldown = 0;
+  } else if(topPos - square.clientHeight/2 < innerHeight - 40 && keysPressed['s']) topPos += step;
+  if (leftPos - square.clientWidth/2 > 0 && keysPressed['a'] && keysPressed[' '] && dashDuration > 0 && !dashBlocked) {
+    leftPos -= dashStep;
+    if(!keysPressed['w'] && !keysPressed['s']) {
+      dashDuration--;
+      dashSound.play();
+      extraDashCooldown = 0;
+    };
+  } else if (leftPos - square.clientWidth/2 > 0 && keysPressed['a']) leftPos -= step;
+  if (leftPos - square.clientWidth/2 < innerWidth &&  keysPressed['d'] && keysPressed[' '] && dashDuration > 0 && !dashBlocked) {
+    leftPos += dashStep;
+    if(!keysPressed['w'] && !keysPressed['s']) {
+      dashDuration--;
+      dashSound.play();
+      extraDashCooldown = 0;
+    };
+  } else if (leftPos - square.clientWidth/2 < innerWidth && keysPressed['d']) leftPos += step;
+
   if (keysPressed['f']) if(shootBullet()) shot.play();
-  if (keysPressed[' ']) if(shootBomb()) shot.play();
 
   square.style.top = topPos + 'px';
   square.style.left = leftPos + 'px';

@@ -1,4 +1,4 @@
-import { updatePlayer, square } from './square.js';
+import { updatePlayer, square, updateDash } from './square.js';
 import { updateBullets, bullets, enemyBullets, bombs, bombCount, addBomb, resetBombCount } from './bullet.js';
 import { spawnEnemy, updateEnemy } from './enemy.js';
 import { updateGun } from './gun.js';
@@ -73,6 +73,7 @@ function gameLoop() {
         updatePlayer();
         updateGun();
         updateHealthBar();
+        updateDash();
         const collected = updateCollectables();
         processCollectables(collected);
         if (!waveSpawning && enemies.length === 0 && enemyS.length === 0 && waveSpawnedCount >= waveEnemyTotal) {

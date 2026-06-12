@@ -1,7 +1,7 @@
 export let bombs = [];
 export let bullets = [];
 export let enemyBullets = [];
-export let bombCount = 0;
+export let bombCount = 3;
 let bombX = 0;
 let bombY = 0;
 let explodingPosX = 0;
@@ -16,7 +16,7 @@ export function addBomb(amount) {
 }
 
 export function resetBombCount() {
-  bombCount = 0;
+  bombCount = 3;
 }
 
 document.addEventListener('mousemove' , (e) => {
