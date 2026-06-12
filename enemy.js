@@ -5,7 +5,6 @@ import { endGame, enemies, enemyS, enemyPlayerCollision, enemyShooterPlayerColli
 let squareX = parseInt(square.style.left, 10);
 let squareY = parseInt(square.style.top, 10);
 const WIDTH = window.innerWidth;
-const HEIGHT = innerHeight;
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
@@ -196,6 +195,7 @@ class EnemyShooter extends Enemy {
             this.el.classList.remove('flipped');
             this.flipped = false;
         }
+        const HEIGHT = innerHeight;
 
         if(!this.shootingAnim){
             this.rowIndex = (2 + this.colorIndex);
@@ -207,7 +207,7 @@ class EnemyShooter extends Enemy {
                 this.vx = -(dx / length) * this.speed;
             }
             
-            if (Math.abs(trig) > this.maxDist || this.y < 0 || this.y > HEIGHT) {
+            if (Math.abs(trig) > this.maxDist || this.y < 0 || this.y > HEIGHT - 60) {
                 this.vy = (dy / length) * this.speed;
             } else if (Math.abs(trig) > this.maxDist - 20) {
                 this.vy = 0;
@@ -220,7 +220,7 @@ class EnemyShooter extends Enemy {
             this.rowIndex = this.colorIndex;
         }
 
-        if(this.inRange && this.y < HEIGHT && this.y > 0 && this.x > 0 && this.x < WIDTH) {
+        if(this.inRange && this.y < HEIGHT - 60 && this.y > 0 && this.x > 0 && this.x < WIDTH) {
             this.shootTimer--;
              if(this.inRange && (this.shootTimer <= 0) && !this.jumpAnim) {
                 this.vx = 0;
@@ -355,6 +355,7 @@ export function updateEnemy() {
 export function spawnEnemy() {
     const side = ["top", "right", "bottom", "left"][Math.floor(Math.random() * 4)];
     let spawnLeft, spawnTop;
+    const HEIGHT = innerHeight;
 
     if (side === "top") {
         spawnLeft = Math.random() * (WIDTH - 40);

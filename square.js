@@ -1,5 +1,5 @@
 import { shootBomb, shootBullet } from "./bullet.js";
-import { gameState } from "./code.js";
+import { gameState, innerHeight } from "./code.js";
 
 export const square = document.getElementById('square');
 const step = 2;
@@ -14,7 +14,6 @@ let dashBlocked = false;
 let dashSound = new Audio('assets/Sounds/Swoosh.wav');
 
 let innerWidth = window.innerWidth;
-let innerHeight = window.innerHeight;
 
 let shot = new Audio('assets/Sounds/Shot.wav');
 
@@ -114,14 +113,14 @@ function mouseDownBomb() {
 let intervalId = null;
 let intervalIdBomb = null;
 document.addEventListener('mousedown', (e) => {
-  if(gameState == 'playing') {
+  if(gameState){if(gameState == 'playing') {
     if(e.button == 0) {
     intervalId = setInterval(mouseDownBullet, 20);
     } 
     if(e.button == 2) {
       intervalIdBomb = setInterval(mouseDownBomb, 20);
     }
-  }
+  }}
 });
 
 document.addEventListener('mouseup', (e) => {

@@ -7,6 +7,7 @@ import { spawnCollectable, updateCollectables } from './collectibles.js';
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
+export let innerHeight = window.innerHeight;
 let zom1 = new Audio('assets/Sounds/ZombieHurt1.wav');
 let zom2 = new Audio('assets/Sounds/ZombieHurt2.ogg');
 let slimeHurt1 = new Audio('assets/Sounds/SlimeDamaged.wav');
@@ -33,8 +34,6 @@ const resizeObserver = new ResizeObserver((entries) => {
 
 resizeObserver.observe(container);
 
-const squareStyle = window.getComputedStyle(square);
-
 let maxHealth = 100;
 let squareHealth = maxHealth;
 let displayedHealth = maxHealth;
@@ -42,7 +41,7 @@ let animationFrameId = null;
 let spawnEnemyintervalId = null;
 let cancelAnimationFrame = window.cancelAnimationFrame || window.mozCancelAnimationFrame || window.webkitCancelAnimationFrame || window.msCancelAnimationFrame;
 canvas.width = document.documentElement.clientWidth;
-export let innerHeight = canvas.height = document.documentElement.clientHeight;
+innerHeight = canvas.height = document.documentElement.clientHeight;
 
 export let gameOver = false;
 export let gameState = "menu";
