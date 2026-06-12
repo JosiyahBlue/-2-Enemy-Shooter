@@ -19,6 +19,20 @@ let gameOverSound = new Audio('assets/Sounds/GameOver.wav');
 export let enemies = []
 export let enemyS = []
 
+const container = canvas.parentElement;
+
+const resizeObserver = new ResizeObserver((entries) => {
+  for (let entry of entries) {
+    const width = entry.contentRect.width;
+    const height = entry.contentRect.height;
+
+    canvas.width = width;
+    canvas.height = height;
+  }
+});
+
+resizeObserver.observe(container);
+
 const squareStyle = window.getComputedStyle(square);
 
 let maxHealth = 100;
@@ -27,6 +41,8 @@ let displayedHealth = maxHealth;
 let animationFrameId = null;
 let spawnEnemyintervalId = null;
 let cancelAnimationFrame = window.cancelAnimationFrame || window.mozCancelAnimationFrame || window.webkitCancelAnimationFrame || window.msCancelAnimationFrame;
+canvas.width = document.documentElement.clientWidth;
+export let innerHeight = canvas.height = document.documentElement.clientHeight;
 
 export let gameOver = false;
 export let gameState = "menu";
@@ -101,7 +117,6 @@ export function endGame() {
     menuOverlay.style.visibility = 'hidden';
     restartButton.style.visibility = 'visible';
     menuButton.style.visibility = 'visible';
-    waveDisplay.style.visibility = 'hidden';
     gameOverMessage.style.visibility = 'visible';
 }
 

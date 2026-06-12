@@ -1,13 +1,11 @@
 import { enemyBullet } from './bullet.js';
 import { endGame, enemies, enemyS, enemyPlayerCollision, enemyShooterPlayerCollision,
     bulletEnemyCollision, enemyBulletPlayerCollision,
-    waveNumber} from './code.js';
+    waveNumber, innerHeight} from './code.js';
 let squareX = parseInt(square.style.left, 10);
 let squareY = parseInt(square.style.top, 10);
 const WIDTH = window.innerWidth;
-const HEIGHT = window.innerHeight;
-let squareHealth = 100;
-let gameOver = false;
+const HEIGHT = innerHeight;
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
@@ -209,7 +207,7 @@ class EnemyShooter extends Enemy {
                 this.vx = -(dx / length) * this.speed;
             }
             
-            if (Math.abs(trig) > this.maxDist || this.y < 0 || this.y > HEIGHT - 60) {
+            if (Math.abs(trig) > this.maxDist || this.y < 0 || this.y > HEIGHT) {
                 this.vy = (dy / length) * this.speed;
             } else if (Math.abs(trig) > this.maxDist - 20) {
                 this.vy = 0;
@@ -222,7 +220,7 @@ class EnemyShooter extends Enemy {
             this.rowIndex = this.colorIndex;
         }
 
-        if(this.inRange && this.y < HEIGHT - 60 && this.y > 0 && this.x > 0 && this.x < WIDTH) {
+        if(this.inRange && this.y < HEIGHT && this.y > 0 && this.x > 0 && this.x < WIDTH) {
             this.shootTimer--;
              if(this.inRange && (this.shootTimer <= 0) && !this.jumpAnim) {
                 this.vx = 0;
@@ -309,9 +307,9 @@ export function updateEnemy() {
     
 
     
-    if (canvas.width !== window.innerWidth || canvas.height !== window.innerHeight) {
+    if (canvas.width !== window.innerWidth || canvas.height !== innerHeight) {
         canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        canvas.height = innerHeight;
     }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
